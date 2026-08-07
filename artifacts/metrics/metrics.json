@@ -1,0 +1,260 @@
+{
+  "run": {
+    "timestamp": "2026-08-07T22:41:55",
+    "seed": 42,
+    "cv_folds": 5,
+    "search_iterations": 30,
+    "feature_engineering": true,
+    "n_train": 8000,
+    "n_test": 2000
+  },
+  "data_quality": {
+    "n_rows": 10000,
+    "n_columns": 10,
+    "missing_values": {},
+    "duplicate_ids": 0,
+    "duplicate_records": 0,
+    "target_distribution": {
+      "1": 0.6174,
+      "0": 0.3826
+    },
+    "out_of_range": {},
+    "implausible_tenure": 385,
+    "unexpected_categories": {}
+  },
+  "leaderboard": [
+    {
+      "model": "random_forest",
+      "cv_roc_auc_mean": 1.0,
+      "cv_roc_auc_std": 0.0,
+      "cv_roc_auc_se": 0.0,
+      "fit_seconds": 35.0,
+      "complexity_rank": 4,
+      "best_params": {
+        "classifier__n_estimators": 300,
+        "classifier__min_samples_leaf": 5,
+        "classifier__max_features": "sqrt",
+        "classifier__max_depth": 16,
+        "classifier__class_weight": "balanced"
+      }
+    },
+    {
+      "model": "hist_gradient_boosting",
+      "cv_roc_auc_mean": 1.0,
+      "cv_roc_auc_std": 0.0,
+      "cv_roc_auc_se": 0.0,
+      "fit_seconds": 17.4,
+      "complexity_rank": 5,
+      "best_params": {
+        "classifier__min_samples_leaf": 50,
+        "classifier__max_leaf_nodes": 31,
+        "classifier__max_iter": 400,
+        "classifier__learning_rate": 0.03,
+        "classifier__l2_regularization": 0.1
+      }
+    },
+    {
+      "model": "decision_tree",
+      "cv_roc_auc_mean": 0.9997,
+      "cv_roc_auc_std": 0.0003,
+      "cv_roc_auc_se": 0.0002,
+      "fit_seconds": 1.2,
+      "complexity_rank": 3,
+      "best_params": {
+        "classifier__min_samples_leaf": 10,
+        "classifier__max_depth": 4,
+        "classifier__criterion": "entropy",
+        "classifier__class_weight": "balanced"
+      }
+    },
+    {
+      "model": "logistic_binned",
+      "cv_roc_auc_mean": 0.9991,
+      "cv_roc_auc_std": 0.0004,
+      "cv_roc_auc_se": 0.0002,
+      "fit_seconds": 2.1,
+      "complexity_rank": 2,
+      "best_params": {
+        "preprocessor__columns__numeric__binner__n_bins": 20,
+        "classifier__class_weight": null,
+        "classifier__C": 10.0
+      }
+    },
+    {
+      "model": "logistic",
+      "cv_roc_auc_mean": 0.9691,
+      "cv_roc_auc_std": 0.0025,
+      "cv_roc_auc_se": 0.0011,
+      "fit_seconds": 1.4,
+      "complexity_rank": 1,
+      "best_params": {
+        "classifier__class_weight": null,
+        "classifier__C": 0.1
+      }
+    },
+    {
+      "model": "dummy",
+      "cv_roc_auc_mean": 0.5,
+      "cv_roc_auc_std": 0.0,
+      "cv_roc_auc_se": 0.0,
+      "fit_seconds": 1.6,
+      "complexity_rank": 0,
+      "best_params": {}
+    }
+  ],
+  "selected_model": {
+    "name": "decision_tree",
+    "rationale": "Depth-limited single tree. Kept for explanation rather than accuracy: the printed splits show the learned thresholds in a form a non-technical stakeholder can read.",
+    "best_params": {
+      "classifier__min_samples_leaf": 10,
+      "classifier__max_depth": 4,
+      "classifier__criterion": "entropy",
+      "classifier__class_weight": "balanced"
+    },
+    "cv_roc_auc_mean": 0.9997,
+    "cv_roc_auc_std": 0.0003
+  },
+  "test_metrics": {
+    "at_default_threshold": {
+      "threshold": 0.5,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "accuracy": 1.0,
+      "balanced_accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "brier_score": 0.0,
+      "log_loss": 2.2204460492503136e-16,
+      "true_negatives": 765,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "true_positives": 1235,
+      "cost_per_employee": 0.0
+    },
+    "at_cost_optimal_threshold": {
+      "threshold": 0.501,
+      "roc_auc": 1.0,
+      "pr_auc": 1.0,
+      "accuracy": 1.0,
+      "balanced_accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "brier_score": 0.0,
+      "log_loss": 2.2204460492503136e-16,
+      "true_negatives": 765,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "true_positives": 1235,
+      "cost_per_employee": 0.0
+    }
+  },
+  "cost_model": {
+    "cost_false_positive": 25.0,
+    "cost_false_negative": 300.0,
+    "optimal_threshold": 0.501,
+    "note": "Costs are a stated assumption, not measured; see report.md."
+  },
+  "slice_metrics": [
+    {
+      "feature": "gender",
+      "value": "Female",
+      "n": 956,
+      "positive_rate": 0.6213,
+      "roc_auc": 1.0,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    {
+      "feature": "gender",
+      "value": "Male",
+      "n": 964,
+      "positive_rate": 0.6048,
+      "roc_auc": 1.0,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    {
+      "feature": "gender",
+      "value": "Other",
+      "n": 80,
+      "positive_rate": 0.725,
+      "roc_auc": 1.0,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    {
+      "feature": "region",
+      "value": "Midwest",
+      "n": 495,
+      "positive_rate": 0.6121,
+      "roc_auc": 1.0,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    {
+      "feature": "region",
+      "value": "Northeast",
+      "n": 487,
+      "positive_rate": 0.6345,
+      "roc_auc": 1.0,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    {
+      "feature": "region",
+      "value": "South",
+      "n": 512,
+      "positive_rate": 0.6172,
+      "roc_auc": 1.0,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    {
+      "feature": "region",
+      "value": "West",
+      "n": 506,
+      "positive_rate": 0.6067,
+      "roc_auc": 1.0,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    {
+      "feature": "employment_type",
+      "value": "Contract",
+      "n": 210,
+      "positive_rate": 0.3238,
+      "roc_auc": 1.0,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    {
+      "feature": "employment_type",
+      "value": "Full-time",
+      "n": 1392,
+      "positive_rate": 0.7565,
+      "roc_auc": 1.0,
+      "recall": 1.0,
+      "precision": 1.0
+    },
+    {
+      "feature": "employment_type",
+      "value": "Part-time",
+      "n": 398,
+      "positive_rate": 0.2864,
+      "roc_auc": 1.0,
+      "recall": 1.0,
+      "precision": 1.0
+    }
+  ],
+  "figures": {
+    "model_comparison": "/Users/vickykumarmaurya/Desktop/dev/tutorial/ABC/artifacts/figures/model_comparison.png",
+    "roc_pr": "/Users/vickykumarmaurya/Desktop/dev/tutorial/ABC/artifacts/figures/roc_pr_curves.png",
+    "calibration": "/Users/vickykumarmaurya/Desktop/dev/tutorial/ABC/artifacts/figures/calibration.png",
+    "threshold_analysis": "/Users/vickykumarmaurya/Desktop/dev/tutorial/ABC/artifacts/figures/threshold_analysis.png",
+    "confusion_matrices": "/Users/vickykumarmaurya/Desktop/dev/tutorial/ABC/artifacts/figures/confusion_matrices.png",
+    "partial_dependence": "/Users/vickykumarmaurya/Desktop/dev/tutorial/ABC/artifacts/figures/partial_dependence.png",
+    "permutation_importance": "/Users/vickykumarmaurya/Desktop/dev/tutorial/ABC/artifacts/figures/permutation_importance.png"
+  }
+}

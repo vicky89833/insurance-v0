@@ -1,0 +1,22 @@
+[project]
+name = "insurance-enrollment-prediction"
+version = "1.0.0"
+description = "Predicting voluntary insurance enrollment from employee census data."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = [
+    # Raised by starlette's TestClient and by joblib on numpy 2.5; both come
+    # from dependencies, not from this project's code.
+    "ignore::DeprecationWarning",
+    "ignore:Using `httpx` with `starlette.testclient`:UserWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B"]

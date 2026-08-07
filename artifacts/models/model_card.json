@@ -1,0 +1,28 @@
+{
+  "model_name": "decision_tree",
+  "rationale": "Depth-limited single tree. Kept for explanation rather than accuracy: the printed splits show the learned thresholds in a form a non-technical stakeholder can read.",
+  "trained_at": "2026-08-07T22:41:55",
+  "training_rows": 8000,
+  "features": [
+    "age",
+    "salary",
+    "tenure_years",
+    "gender",
+    "marital_status",
+    "employment_type",
+    "region",
+    "has_dependents"
+  ],
+  "engineered_features": [
+    "log_salary",
+    "tenure_ratio"
+  ],
+  "primary_metric": "roc_auc",
+  "test_roc_auc": 1.0,
+  "recommended_threshold": 0.501,
+  "known_limitations": [
+    "Trained on synthetic data; coefficients should not be read as real-world effects.",
+    "tenure_years carries no signal in this dataset and may in reality; revisit before relying on it.",
+    "Cost assumptions (FP/FN) are placeholders and drive the recommended threshold."
+  ]
+}

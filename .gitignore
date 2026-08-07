@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+venv/
+env/
+
+# Trained artifacts are reproducible with `make train`, so the binary model is
+# not tracked. Metrics and figures ARE tracked: they are the evidence behind
+# report.md and should be reviewable in a diff.
+artifacts/models/*.joblib
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

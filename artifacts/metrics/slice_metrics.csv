@@ -1,0 +1,11 @@
+feature,value,n,positive_rate,roc_auc,recall,precision
+gender,Female,956,0.6213389121338913,1.0,1.0,1.0
+gender,Male,964,0.6047717842323651,1.0,1.0,1.0
+gender,Other,80,0.725,1.0,1.0,1.0
+region,Midwest,495,0.6121212121212121,1.0,1.0,1.0
+region,Northeast,487,0.6344969199178645,1.0,1.0,1.0
+region,South,512,0.6171875,1.0,1.0,1.0
+region,West,506,0.6067193675889329,1.0,1.0,1.0
+employment_type,Contract,210,0.3238095238095238,1.0,1.0,1.0
+employment_type,Full-time,1392,0.7564655172413793,1.0,1.0,1.0
+employment_type,Part-time,398,0.2864321608040201,1.0,1.0,1.0
