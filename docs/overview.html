@@ -1,0 +1,803 @@
+<title>Insurance Enrollment Prediction — What, Why, How</title>
+
+<style>
+  /* ---------------------------------------------------------------- tokens */
+  :root {
+    --paper:      #f1f4f8;
+    --panel:      #ffffff;
+    --panel-alt:  #e7ecf3;
+    --ink:        #111a26;
+    --ink-soft:   #46586e;
+    --ink-faint:  #74849a;
+    --rule:       #c8d2df;
+    --rule-soft:  #dde4ed;
+    --accent:     #b4670f;
+    --accent-bg:  #f6e6d0;
+    --yes:        #2b6a4c;
+    --yes-bg:     #dbeadf;
+    --no:         #963c38;
+    --no-bg:      #f0dedd;
+
+    --display: "Avenir Next Condensed", "Roboto Condensed", "Arial Narrow", "Helvetica Neue", system-ui, sans-serif;
+    --body: Charter, "Iowan Old Style", "Source Serif 4", Georgia, "Times New Roman", serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+
+    --s0: 1rem;
+    --s1: 1.15rem;
+    --s2: 1.45rem;
+    --s3: 2rem;
+    --s4: clamp(2.6rem, 6vw, 4.1rem);
+
+    --gutter: clamp(1.25rem, 4vw, 3.5rem);
+    --measure: 68ch;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper:     #0c141e;
+      --panel:     #131e2b;
+      --panel-alt: #1a2735;
+      --ink:       #e2e9f2;
+      --ink-soft:  #a3b2c5;
+      --ink-faint: #78889d;
+      --rule:      #2b3a4c;
+      --rule-soft: #1e2b3a;
+      --accent:    #e5a049;
+      --accent-bg: #33270f;
+      --yes:       #6fc295;
+      --yes-bg:    #14301f;
+      --no:        #e08b86;
+      --no-bg:     #331917;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:     #0c141e;
+    --panel:     #131e2b;
+    --panel-alt: #1a2735;
+    --ink:       #e2e9f2;
+    --ink-soft:  #a3b2c5;
+    --ink-faint: #78889d;
+    --rule:      #2b3a4c;
+    --rule-soft: #1e2b3a;
+    --accent:    #e5a049;
+    --accent-bg: #33270f;
+    --yes:       #6fc295;
+    --yes-bg:    #14301f;
+    --no:        #e08b86;
+    --no-bg:     #331917;
+  }
+
+  :root[data-theme="light"] {
+    --paper:     #f1f4f8;
+    --panel:     #ffffff;
+    --panel-alt: #e7ecf3;
+    --ink:       #111a26;
+    --ink-soft:  #46586e;
+    --ink-faint: #74849a;
+    --rule:      #c8d2df;
+    --rule-soft: #dde4ed;
+    --accent:    #b4670f;
+    --accent-bg: #f6e6d0;
+    --yes:       #2b6a4c;
+    --yes-bg:    #dbeadf;
+    --no:        #963c38;
+    --no-bg:     #f0dedd;
+  }
+
+  /* ------------------------------------------------------------------ base */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: var(--s0);
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .display { font-family: var(--display); text-wrap: balance; }
+
+  a { color: var(--accent); text-underline-offset: 3px; }
+
+  :where(a, button, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  code, .fig { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* --------------------------------------------------------------- layout */
+  .band { border-bottom: 1px solid var(--rule); }
+
+  .wrap {
+    max-width: 78rem;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .sect {
+    display: grid;
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    gap: clamp(1rem, 4vw, 3rem);
+    padding-block: clamp(2.75rem, 6vw, 4.5rem);
+  }
+
+  @media (max-width: 46rem) {
+    .sect { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+  }
+
+  .rail {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding-top: 0.65rem;
+  }
+
+  .rail span {
+    display: block;
+    color: var(--ink-faint);
+    letter-spacing: 0.1em;
+    margin-top: 0.35rem;
+  }
+
+  .flow { display: flex; flex-direction: column; gap: 1.15rem; min-width: 0; }
+  .flow p, .flow li { max-width: var(--measure); color: var(--ink-soft); }
+  .flow > h2 { margin: 0; }
+
+  h2 {
+    font-size: var(--s3);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+  }
+
+  h3 {
+    font-size: var(--s1);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0.6rem 0 0;
+    color: var(--ink);
+  }
+
+  p { margin: 0; }
+
+  strong { color: var(--ink); font-weight: 700; }
+
+  /* ------------------------------------------------------------- masthead */
+  .masthead { padding-block: clamp(2rem, 5vw, 3.25rem) clamp(1.75rem, 4vw, 2.5rem); }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 1.1rem;
+  }
+
+  h1 {
+    font-size: var(--s4);
+    line-height: 0.95;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin: 0 0 1rem;
+    max-width: 20ch;
+  }
+
+  .standfirst {
+    font-size: var(--s2);
+    line-height: 1.42;
+    color: var(--ink-soft);
+    max-width: 46ch;
+    margin: 0;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2.25rem;
+    margin-top: 2rem;
+    padding-top: 1.15rem;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+  }
+
+  .meta div { padding-block: 0.4rem; }
+  .meta dt { color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.12em; font-size: 0.68rem; }
+  .meta dd { margin: 0.2rem 0 0; color: var(--ink); }
+
+  /* ----------------------------------------------------------- rule panel */
+  .gate { background: var(--panel-alt); }
+
+  .gate-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 15rem);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: start;
+    padding-block: clamp(2.25rem, 5vw, 3.5rem);
+  }
+
+  @media (max-width: 52rem) {
+    .gate-inner { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  .gate-head {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.8rem;
+  }
+
+  .gate-lede {
+    font-size: var(--s1);
+    color: var(--ink);
+    max-width: 54ch;
+    margin: 0 0 1.6rem;
+  }
+
+  .conds {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .cond {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.3;
+    padding: 0.85rem 0.9rem;
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    color: var(--ink-faint);
+    cursor: pointer;
+    transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  }
+
+  .cond:hover { border-color: var(--ink-faint); }
+
+  .cond .box {
+    flex: none;
+    width: 1.05rem;
+    height: 1.05rem;
+    border: 1px solid var(--rule);
+    display: grid;
+    place-items: center;
+    font-size: 0.7rem;
+    color: transparent;
+  }
+
+  .cond[aria-pressed="true"] {
+    background: var(--yes-bg);
+    border-color: var(--yes);
+    color: var(--ink);
+  }
+
+  .cond[aria-pressed="true"] .box {
+    background: var(--yes);
+    border-color: var(--yes);
+    color: var(--panel);
+  }
+
+  :root[data-theme="dark"] .cond[aria-pressed="true"] .box { color: #0c141e; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .cond[aria-pressed="true"] .box { color: #0c141e; }
+  }
+
+  .verdict {
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    position: sticky;
+    top: 1rem;
+  }
+
+  .verdict-label {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .tally {
+    font-family: var(--display);
+    font-size: 3.4rem;
+    line-height: 0.9;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  .tally small { font-size: 1.2rem; color: var(--ink-faint); font-weight: 400; }
+
+  .stamp {
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid currentColor;
+    text-align: center;
+  }
+
+  .stamp[data-state="yes"] { color: var(--yes); background: var(--yes-bg); }
+  .stamp[data-state="no"]  { color: var(--no);  background: var(--no-bg); }
+
+  .verdict-note { font-size: 0.85rem; color: var(--ink-faint); line-height: 1.45; }
+
+  /* -------------------------------------------------------------- callout */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-bg);
+    padding: 1.1rem 1.25rem;
+    max-width: var(--measure);
+  }
+
+  .callout p { color: var(--ink); }
+
+  /* ---------------------------------------------------------------- steps */
+  .steps { display: flex; flex-direction: column; gap: 0; margin: 0.5rem 0 0; padding: 0; list-style: none; }
+
+  .steps li {
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    gap: 1rem;
+    padding-block: 1rem;
+    border-top: 1px solid var(--rule-soft);
+    max-width: none;
+  }
+
+  .steps li:last-child { border-bottom: 1px solid var(--rule-soft); }
+
+  .steps .n {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--accent);
+    padding-top: 0.15rem;
+  }
+
+  .steps b { display: block; font-family: var(--display); font-size: var(--s1); color: var(--ink); letter-spacing: 0.01em; }
+  .steps span { color: var(--ink-soft); max-width: var(--measure); display: block; margin-top: 0.15rem; }
+
+  /* --------------------------------------------------------------- tables */
+  .scroller { overflow-x: auto; border: 1px solid var(--rule); background: var(--panel); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+
+  th, td {
+    text-align: left;
+    padding: 0.62rem 0.9rem;
+    border-bottom: 1px solid var(--rule-soft);
+    white-space: nowrap;
+  }
+
+  thead th {
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  tbody tr:last-child td { border-bottom: 0; }
+
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  tr.picked td { background: var(--accent-bg); }
+  tr.picked td:first-child { box-shadow: inset 3px 0 0 var(--accent); font-weight: 700; }
+
+  .zero { color: var(--ink-faint); }
+
+  .cap { font-size: 0.8rem; color: var(--ink-faint); font-family: var(--mono); }
+
+  /* ---------------------------------------------------------------- stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+  }
+
+  .stat { background: var(--panel); padding: 1rem 1.1rem; }
+  .stat dt { font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-faint); }
+  .stat dd { margin: 0.35rem 0 0; font-family: var(--display); font-size: 1.85rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+  /* ----------------------------------------------------------------- misc */
+  .bullets { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.55rem; }
+  .bullets li::marker { color: var(--accent); }
+
+  pre {
+    margin: 0;
+    overflow-x: auto;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    padding: 1rem 1.1rem;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: var(--ink);
+  }
+
+  pre .c { color: var(--ink-faint); }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--rule);
+    color: var(--ink-faint);
+  }
+
+  footer { padding-block: 2.5rem 3.5rem; color: var(--ink-faint); font-size: 0.82rem; }
+  footer p { color: var(--ink-faint); max-width: var(--measure); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  }
+</style>
+
+<header class="band">
+  <div class="wrap masthead">
+    <div class="eyebrow">Machine learning take-home &middot; Neustack</div>
+    <h1>Who signs up for the insurance?</h1>
+    <p class="standfirst">
+      A pipeline that predicts voluntary insurance enrollment from HR data &mdash; and
+      the audit that found the answer was never a prediction problem at all.
+    </p>
+    <dl class="meta">
+      <div><dt>Dataset</dt><dd>10,000 employees</dd></div>
+      <div><dt>Models compared</dt><dd>6, all tuned</dd></div>
+      <div><dt>Test ROC-AUC</dt><dd>1.0000</dd></div>
+      <div><dt>Tests</dt><dd>76 passing</dd></div>
+      <div><dt>Stack</dt><dd>scikit-learn &middot; FastAPI</dd></div>
+    </dl>
+  </div>
+</header>
+
+<section class="band gate">
+  <div class="wrap gate-inner">
+    <div>
+      <div class="gate-head">The rule hiding in the data &mdash; try it</div>
+      <p class="gate-lede">
+        The target isn't noisy, or probabilistic, or even hard. Enrollment is decided by
+        <strong>three of these four conditions</strong>. Toggle them and watch the verdict flip.
+      </p>
+      <fieldset class="conds" id="conds">
+        <button class="cond" type="button" aria-pressed="true" data-cond>
+          <span class="box" aria-hidden="true">&#10003;</span><span>age &gt; 30</span>
+        </button>
+        <button class="cond" type="button" aria-pressed="true" data-cond>
+          <span class="box" aria-hidden="true">&#10003;</span><span>salary &gt; $60,000</span>
+        </button>
+        <button class="cond" type="button" aria-pressed="true" data-cond>
+          <span class="box" aria-hidden="true">&#10003;</span><span>employment = Full-time</span>
+        </button>
+        <button class="cond" type="button" aria-pressed="false" data-cond>
+          <span class="box" aria-hidden="true">&#10003;</span><span>has dependents</span>
+        </button>
+      </fieldset>
+    </div>
+
+    <div class="verdict">
+      <div class="verdict-label">Conditions met</div>
+      <div class="tally"><span id="tally">3</span><small> / 4</small></div>
+      <div class="stamp" id="stamp" data-state="yes" role="status">Enrolled</div>
+      <p class="verdict-note" id="note">Threshold reached &mdash; exactly 3 of 4.</p>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap sect">
+    <div class="rail">What<span>the deliverable</span></div>
+    <div class="flow">
+      <h2>An enrollment model, built the way a production one would be</h2>
+      <p>
+        Given eight attributes about an employee &mdash; age, salary, tenure, employment type,
+        region, gender, marital status, dependents &mdash; the system predicts whether they'll
+        opt into a voluntary insurance product, and ranks them for outreach.
+      </p>
+      <p>It ships as four things:</p>
+      <ul class="bullets">
+        <li><strong>A training pipeline</strong> that validates, cleans, tunes six candidate models, picks one, and evaluates it on data it has never seen.</li>
+        <li><strong>A prediction API</strong> &mdash; FastAPI, four endpoints, validated inputs, model loaded once at startup.</li>
+        <li><strong>An evidence trail</strong>: every figure and metric regenerates from source, so no number in the write-up is unverifiable.</li>
+        <li><strong>76 tests</strong> covering data contracts, leakage prevention, threshold economics, and API failure modes.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap sect">
+    <div class="rail">Why<span>the finding</span></div>
+    <div class="flow">
+      <h2>A perfect score is a red flag, not a trophy</h2>
+      <p>
+        The models hit <strong>1.000 ROC-AUC on held-out data</strong>. That number should stop
+        you cold. On real behavioural data it means a leaked feature; the only innocent
+        explanation is that the label isn't really random.
+      </p>
+      <p>So the pipeline checks. It fits an unconstrained decision tree on the whole dataset and asks how hard the data is to separate:</p>
+      <div class="callout">
+        <p>
+          <strong>100% training accuracy at depth 5, using 13 leaves.</strong> No label noise,
+          no irreducible error. A rule search then recovered the generator exactly &mdash; matching
+          all 10,000 rows with zero mismatches.
+        </p>
+      </div>
+      <p>
+        Which reframes the whole exercise. Four of the eight features &mdash; <code>gender</code>,
+        <code>region</code>, <code>marital_status</code>, <code>tenure_years</code> &mdash; are noise
+        <em>by construction</em>. They appear nowhere in the rule, and permutation importance scores
+        them at exactly zero. The perfect metric describes the data generator, not the modelling.
+      </p>
+      <h3>Why that's the valuable result</h3>
+      <p>
+        The tempting submission reports 100% accuracy and calls it a win. The honest one says:
+        this dataset is synthetic and fully solved, here's the rule, and if it were real you
+        wouldn't need machine learning to evaluate a three-of-four threshold &mdash; you'd need
+        four lines of business logic. That check now runs on every pass of the analysis.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap sect">
+    <div class="rail">How<span>the pipeline</span></div>
+    <div class="flow">
+      <h2>Six stages, each defending against a specific failure</h2>
+      <ol class="steps">
+        <li>
+          <span class="n">01</span>
+          <div><b>Load &amp; validate</b><span>Schema checks and a data-quality report. Problems get <em>reported</em>, never silently patched &mdash; including 385 employees whose tenure exceeds their plausible working life.</span></div>
+        </li>
+        <li>
+          <span class="n">02</span>
+          <div><b>Preprocess inside the pipeline</b><span>Imputing, encoding and scaling are pipeline steps, so they're refit within every cross-validation fold. Fitting a scaler before the split is the classic silent leak; this makes it structurally impossible.</span></div>
+        </li>
+        <li>
+          <span class="n">03</span>
+          <div><b>Tune six candidates</b><span>From a majority-class dummy up to gradient boosting, 30 randomised-search candidates each, 5-fold stratified, scored on ROC-AUC.</span></div>
+        </li>
+        <li>
+          <span class="n">04</span>
+          <div><b>Select the simplest adequate model</b><span>A one-standard-error rule: among models statistically tied with the best, take the simplest. Complexity has to beat noise to earn its place.</span></div>
+        </li>
+        <li>
+          <span class="n">05</span>
+          <div><b>Evaluate once, on held-out data</b><span>Ranking, calibration, per-subgroup slices, permutation importance, partial dependence &mdash; plus a cost-based decision threshold.</span></div>
+        </li>
+        <li>
+          <span class="n">06</span>
+          <div><b>Serve</b><span>The fitted pipeline persists to disk and loads once at API startup. Unknown categories encode safely rather than throwing.</span></div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap sect">
+    <div class="rail">How<span>model choice</span></div>
+    <div class="flow">
+      <h2>Why a depth-4 tree beat a random forest that scored higher</h2>
+      <div class="scroller">
+        <table>
+          <thead>
+            <tr><th>Model</th><th>CV ROC-AUC</th><th>Why it's in the comparison</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Dummy (majority class)</td><td class="num">0.5000</td><td>Anchors the reader: 61.7% accuracy is what "predict everyone" scores</td></tr>
+            <tr><td>Logistic regression</td><td class="num">0.9691</td><td>Interpretable baseline &mdash; predicted to underfit the step effects</td></tr>
+            <tr><td>Logistic + binned numerics</td><td class="num">0.9991</td><td>Same model, better features &mdash; isolates representation from capacity</td></tr>
+            <tr class="picked"><td>Decision tree, depth 4</td><td class="num">0.9997</td><td>Selected &mdash; axis-aligned splits match threshold rules exactly</td></tr>
+            <tr><td>Random forest</td><td class="num">1.0000</td><td>Standard non-linear reference</td></tr>
+            <tr><td>Hist. gradient boosting</td><td class="num">1.0000</td><td>Expected top performer</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cap">5-fold stratified CV on the training split only.</p>
+      <p>
+        The forest wins by <strong>0.0003 AUC</strong> &mdash; on a 2,000-row test set, roughly half
+        an employee's worth of ranking. Paying for that with 300 trees, an unreadable decision
+        surface and 30&times; the training time is a bad trade. The tree is auditable by a compliance
+        reviewer, scores in microseconds, and turns out to represent the true rule exactly.
+      </p>
+      <h3>The most informative row is the third one</h3>
+      <p>
+        Plain logistic regression manages 0.9691. The <em>identical</em> estimator over quantile-binned
+        numerics reaches 0.9991 &mdash; closing 97% of the gap to the trees. That proves the baseline was
+        limited by how the features were represented, not by the model's capacity: a straight line in the
+        log-odds can't express a cliff at age 30, but a line over binned features can.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap sect">
+    <div class="rail">How<span>the decision</span></div>
+    <div class="flow">
+      <h2>A score isn't a decision</h2>
+      <p>
+        Turning "0.73" into "call this person" needs to know what each mistake costs. There's no real
+        economics for this product, so the assumption is stated in the open rather than smuggled into
+        a default: <strong>$25</strong> of wasted outreach for a false positive, <strong>$300</strong>
+        of forgone margin for a missed enrollment.
+      </p>
+      <p>
+        Only the 12&#8239;:&#8239;1 ratio matters, and it moves the optimal cut-off from 0.5 down to
+        <strong>0.077</strong>. The business reading is more interesting than the number: when missing
+        a customer costs twelve times more than a wasted call, you should contact nearly everyone with
+        any meaningful probability.
+      </p>
+      <div class="callout">
+        <p>
+          Measured on an earlier, imperfect model: tuning the threshold cut operating cost from
+          <strong>$19.62 to $3.34 per employee</strong> &mdash; while accuracy <em>fell</em> from 90.3%
+          to 87.8%. Optimising accuracy would have cost roughly six times more to run.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap sect">
+    <div class="rail">Results<span>held out</span></div>
+    <div class="flow">
+      <h2>What the model learned</h2>
+      <dl class="stats">
+        <div class="stat"><dt>ROC-AUC</dt><dd>1.0000</dd></div>
+        <div class="stat"><dt>PR-AUC</dt><dd>1.0000</dd></div>
+        <div class="stat"><dt>Accuracy</dt><dd>1.0000</dd></div>
+        <div class="stat"><dt>Baseline</dt><dd>0.6170</dd></div>
+        <div class="stat"><dt>False neg.</dt><dd>0</dd></div>
+        <div class="stat"><dt>False pos.</dt><dd>0</dd></div>
+      </dl>
+      <p class="cap">2,000-row stratified hold-out, used exactly once.</p>
+      <h3>Permutation importance confirms the rule independently</h3>
+      <div class="scroller">
+        <table>
+          <thead><tr><th>Feature</th><th>Drop in ROC-AUC when shuffled</th><th>In the rule?</th></tr></thead>
+          <tbody>
+            <tr><td>has_dependents</td><td class="num">0.2298</td><td>Yes</td></tr>
+            <tr><td>salary</td><td class="num">0.2209</td><td>Yes</td></tr>
+            <tr><td>employment_type</td><td class="num">0.1892</td><td>Yes</td></tr>
+            <tr><td>age</td><td class="num">0.1408</td><td>Yes</td></tr>
+            <tr><td class="zero">region</td><td class="num zero">0.0000</td><td class="zero">&mdash;</td></tr>
+            <tr><td class="zero">marital_status</td><td class="num zero">0.0000</td><td class="zero">&mdash;</td></tr>
+            <tr><td class="zero">gender</td><td class="num zero">0.0000</td><td class="zero">&mdash;</td></tr>
+            <tr><td class="zero">tenure_years</td><td class="num zero">0.0000</td><td class="zero">&mdash;</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Four features carry all the signal; four are <em>exactly</em> zero to four decimals. The model
+        found the rule without ever being told it &mdash; the partial-dependence curves recover the
+        breakpoints at age 30 and $60,000 on their own.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap sect">
+    <div class="rail">Limits<span>read this</span></div>
+    <div class="flow">
+      <h2>What doesn't transfer</h2>
+      <ul class="bullets">
+        <li><strong>Every number here is about synthetic data.</strong> No threshold, coefficient or score carries over to real enrollment behaviour.</li>
+        <li><strong>The cost ratio is invented.</strong> $25 and $300 are placeholders that drive the recommended operating point. Replace them with measured campaign economics before trusting the threshold.</li>
+        <li><strong>The fairness check passed trivially.</strong> Performance is identical across gender, region and employment type &mdash; but only because those fields are noise here. On real data this is the check most likely to fail, and <code>gender</code> would need legal review before any deployment.</li>
+        <li><strong>The real model is missing its most important features.</strong> Enrollment is a price-sensitive decision, and this dataset contains no price: no premium, no employer contribution, no plan alternatives, no open-enrollment timing.</li>
+      </ul>
+      <h3>The judgement call worth arguing about</h3>
+      <p>
+        Because the top models tie on every fold, their standard error is exactly zero &mdash; which would
+        make the selection rule demand a perfect tie and always crown the most complex model. The tolerance
+        is floored at 0.0005 AUC to keep the "prefer simpler" intent alive. That constant is a judgement
+        call, and it's named in the config rather than buried.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap sect">
+    <div class="rail">Run it<span>three commands</span></div>
+    <div class="flow">
+      <h2>Reproducing all of it</h2>
+<pre><code>make setup   <span class="c"># virtualenv + pinned dependencies</span>
+make eda     <span class="c"># quality report, rule discovery, figures</span>
+make train   <span class="c"># tune, select, evaluate, persist</span>
+make test    <span class="c"># 76 tests</span>
+make serve   <span class="c"># API on :8000, docs at /docs</span></code></pre>
+      <p>
+        Runs are seeded and deterministic. Every metric lands in <code>artifacts/metrics/</code> and every
+        figure in <code>artifacts/figures/</code> &mdash; both tracked in git, because they're the evidence
+        behind the write-up and should be reviewable in a diff.
+      </p>
+      <p>
+        <span class="tag">report.md</span> findings and rationale &nbsp;
+        <span class="tag">docs/design.md</span> decisions made before coding &nbsp;
+        <span class="tag">README.md</span> setup and API
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>
+      Built for the Neustack ML take-home. Python 3.12, pandas 3.0.5, scikit-learn 1.9.0, FastAPI 0.141.1.
+      The dataset is synthetic; the caveats above are the point.
+    </p>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var buttons = Array.prototype.slice.call(document.querySelectorAll("[data-cond]"));
+    var tally = document.getElementById("tally");
+    var stamp = document.getElementById("stamp");
+    var note = document.getElementById("note");
+
+    var NOTES = {
+      0: "Nowhere near the threshold.",
+      1: "One condition short of halfway.",
+      2: "Two of four — still below the line.",
+      3: "Threshold reached — exactly 3 of 4.",
+      4: "Every condition satisfied."
+    };
+
+    function update() {
+      var met = buttons.filter(function (b) {
+        return b.getAttribute("aria-pressed") === "true";
+      }).length;
+
+      var enrolled = met >= 3;
+      tally.textContent = met;
+      stamp.textContent = enrolled ? "Enrolled" : "Not enrolled";
+      stamp.setAttribute("data-state", enrolled ? "yes" : "no");
+      note.textContent = NOTES[met];
+    }
+
+    buttons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        var pressed = button.getAttribute("aria-pressed") === "true";
+        button.setAttribute("aria-pressed", pressed ? "false" : "true");
+        update();
+      });
+    });
+
+    update();
+  })();
+</script>
