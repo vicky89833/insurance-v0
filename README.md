@@ -6,6 +6,20 @@ An end-to-end ML pipeline that predicts whether an employee will enroll in a vol
 
 ---
 
+## The finding, in one picture
+
+The model was never told about the rule. It found the breakpoints on its own — a step at **age 30**, a step at **$60,000**, and a perfectly flat line for `tenure_years`, which carries no signal at all:
+
+![Partial dependence showing step functions at age 30 and salary 60000, and a flat line for tenure](artifacts/figures/partial_dependence.png)
+
+Permutation importance says the same thing from the other direction. Four features carry the entire signal; the other four score **exactly zero** — their bars are invisible because there is nothing to draw:
+
+![Permutation importance: has_dependents, salary, employment_type and age carry all signal; region, marital_status, gender and tenure_years are exactly zero](artifacts/figures/permutation_importance.png)
+
+That is the whole argument of this project on two charts: the target is a deterministic rule over four features, and half the dataset is noise by construction.
+
+---
+
 ## Quickstart
 
 ```bash
@@ -57,7 +71,72 @@ Requires Python 3.11+. Training takes ~90 seconds on a laptop.
 | Signal features | `has_dependents`, `salary`, `employment_type`, `age` |
 | Zero-importance features | `gender`, `region`, `marital_status`, `tenure_years` |
 
+Six candidates were tuned and compared under an identical protocol:
+
+![Model comparison bar chart: dummy 0.5000, logistic 0.9691, logistic_binned 0.9991, decision_tree 0.9997, random_forest 1.0000, hist_gradient_boosting 1.0000](artifacts/figures/model_comparison.png)
+
 A depth-4 tree was chosen over a random forest that scored 1.0000: the 0.0003 AUC difference is far below what is worth paying for in interpretability and latency.
+
+### What a training run looks like
+
+```
+$ make train
+
+=== Cross-validated model comparison (training set) ===
+                 model  cv_roc_auc_mean  cv_roc_auc_std  cv_roc_auc_se  fit_seconds  complexity_rank
+         random_forest           1.0000          0.0000         0.0000         35.7                4
+hist_gradient_boosting           1.0000          0.0000         0.0000         19.6                5
+         decision_tree           0.9997          0.0003         0.0002          1.3                3
+       logistic_binned           0.9991          0.0004         0.0002          1.7                2
+              logistic           0.9691          0.0025         0.0011          1.5                1
+                 dummy           0.5000          0.0000         0.0000          1.7                0
+
+INFO  Selected 'decision_tree' over the top scorer 'random_forest':
+      within 1 SE (0.9997 >= 0.9995) and simpler.
+
+=== Held-out test performance ===
+ROC-AUC 1.0000 | PR-AUC 1.0000 | Brier 0.0000
+@ t=0.500  accuracy 1.0000  precision 1.0000  recall 1.0000
+
+=== Permutation importance (test set) ===
+        feature  importance_mean  importance_std
+ has_dependents           0.2298          0.0088
+         salary           0.2209          0.0051
+employment_type           0.1892          0.0071
+            age           0.1408          0.0052
+         region           0.0000          0.0000
+ marital_status           0.0000          0.0000
+         gender           0.0000          0.0000
+   tenure_years           0.0000          0.0000
+```
+
+The EDA run reports the finding that reframes everything:
+
+```
+$ make eda
+
+WARNING  Target is a DETERMINISTIC function of the features
+         (unconstrained tree: 100% train accuracy, depth 5, 13 leaves).
+WARNING  Exact rule recovered -> at least 3 of 4:
+         age > 30 | salary > 60000 | employment_type == 'Full-time' | has_dependents == 'Yes'
+```
+
+<details>
+<summary><strong>More figures</strong> — enrollment rates, ROC/PR curves, calibration, threshold economics</summary>
+
+Enrollment rate across every feature. The step changes in `age` and `salary` are visible here, as are the four features that sit flat on the overall rate:
+
+![Enrollment rate by feature](artifacts/figures/eda_target_relationships.png)
+
+ROC and precision-recall curves on the held-out set:
+
+![ROC and precision-recall curves](artifacts/figures/roc_pr_curves.png)
+
+Threshold economics — the operating-point trade-off and the cost curve that selects the decision threshold:
+
+![Threshold analysis](artifacts/figures/threshold_analysis.png)
+
+</details>
 
 ---
 
@@ -92,6 +171,25 @@ curl -X POST http://127.0.0.1:8000/predict \
   "model_name": "decision_tree"
 }
 ```
+
+Live responses from a running service — an employee meeting all four conditions, one meeting none, and a rejected request:
+
+```
+GET  /health                         {"status":"ok","model_loaded":true,
+                                      "model_name":"decision_tree",
+                                      "trained_at":"2026-08-08T10:18:51"}
+
+POST /predict   (41 / $72.5k /       {"enrollment_probability":1.0,
+                 Full-time / deps)    "will_enroll":true, "threshold":0.501}
+
+POST /predict   (25 / $30k /         {"enrollment_probability":0.0,
+                 Part-time / none)    "will_enroll":false,"threshold":0.501}
+
+POST /predict   employment_type      HTTP 422  — rejected before reaching
+                = "Freelance"                    the model
+```
+
+`make serve` also exposes an interactive Swagger UI at `/docs`, where you can fill in an employee and run a prediction from the browser.
 
 Input is validated by Pydantic, so malformed requests get a precise `422` rather than a `500`. If no model has been trained yet, the service still starts, reports `degraded` on `/health`, and returns `503` from the prediction endpoints.
 
@@ -153,7 +251,16 @@ Runs are deterministic given a seed.
 make test
 ```
 
+```
+$ make test
+........................................................................ [ 94%]
+....                                                                     [100%]
+76 passed in 34.78s
+```
+
 76 tests covering the data contract and quality checks, feature engineering edge cases (unseen categories, missing values, division-by-zero on `tenure_ratio`), pipeline structure and leakage prevention, the model-selection rule, threshold economics, and every API endpoint including failure modes.
+
+Verified end to end from a clean `git clone` — `make setup && make all` reproduces every figure and metric above, with an identical leaderboard to four decimal places.
 
 ---
 
